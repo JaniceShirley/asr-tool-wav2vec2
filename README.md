@@ -82,8 +82,8 @@ flowchart TD
 
 ### 1. Clone or Navigate to the Repository
 ```bash
-git clone https://github.com/<your-username>/<your-repo-name>.git
-cd <your-repo-name>
+git clone https://github.com/JaniceShirley/asr-tool-wav2vec2.git
+cd asr-tool-wav2vec2
 ```
 
 ### 2. Create and Activate a Virtual Environment
@@ -192,8 +192,8 @@ git commit -m "feat: complete Wav2Vec2 ASR tool implementation with Web UI and C
 # 4. Rename branch to main
 git branch -M main
 
-# 5. Link to your GitHub repository (replace with your actual GitHub repo URL)
-git remote add origin https://github.com/<your-username>/<your-repo-name>.git
+# 5. Link to your GitHub repository
+git remote add origin https://github.com/JaniceShirley/asr-tool-wav2vec2.git
 
 # 6. Push to GitHub
 git push -u origin main
