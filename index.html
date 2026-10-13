@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wav2Vec 2.0 ASR Voice Studio</title>
+    <meta name="description" content="Minimalist Automatic Speech Recognition (ASR) Voice Studio for live dictation and audio transcription.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #090d16;
+            --bg-card: rgba(22, 29, 47, 0.75);
+            --bg-card-hover: rgba(30, 41, 67, 0.85);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(99, 102, 241, 0.3);
+            --accent-primary: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --radius-lg: 16px;
+            --radius-md: 10px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(236, 72, 153, 0.1) 0%, transparent 40%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            letter-spacing: 0.03em;
+        }
+
+        .badge-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 10px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            max-width: 620px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        /* Glassmorphic Cards */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            transition: border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: var(--border-highlight);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 6px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-primary);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+        }
+
+        /* Mic Interface */
+        .mic-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+            text-align: center;
+            gap: 16px;
+        }
+
+        .record-trigger {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .record-trigger:hover {
+            transform: scale(1.06);
+            box-shadow: 0 0 35px rgba(99, 102, 241, 0.6);
+        }
+
+        .record-trigger.recording {
+            background: var(--danger);
+            animation: pulse-ring 1.5s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 22px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .record-trigger svg {
+            width: 32px;
+            height: 32px;
+            fill: #ffffff;
+        }
+
+        .status-indicator {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #64748b;
+        }
+
+        .status-dot.active {
+            background-color: var(--danger);
+            box-shadow: 0 0 8px var(--danger);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.4; }
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 34px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .upload-area input {
+            display: none;
+        }
+
+        /* Transcription Box */
+        .transcript-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .transcript-header h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+
+        .cleaner-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            padding: 7px 12px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-action.primary {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #a5b4fc;
+        }
+
+        .btn-action.primary:hover {
+            background: var(--accent-primary);
+            color: #ffffff;
+        }
+
+        textarea#transcript {
+            width: 100%;
+            min-height: 170px;
+            background: rgba(9, 13, 22, 0.85);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            color: var(--text-main);
+            font-size: 1rem;
+            line-height: 1.6;
+            resize: vertical;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        textarea#transcript:focus {
+            border-color: var(--accent-primary);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Audio Player Bar */
+        #audio-preview-container {
+            margin-top: 14px;
+            display: none;
+        }
+
+        audio {
+            width: 100%;
+            height: 40px;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 20px;
+        }
+
+        footer a {
+            color: #818cf8;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="badge">
+            <span class="badge-dot"></span>
+            TASK 2 – ASR Tool Implementation
+        </div>
+        <h1>🎙️ Wav2Vec 2.0 ASR Voice Studio</h1>
+        <p class="subtitle">Real-time live voice dictation and speech recognition engine with smart text cleaning, TTS playback, and multi-format audio support.</p>
+    </header>
+
+    <!-- Input Section -->
+    <div class="card">
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-mic-btn" onclick="switchTab('mic')">
+                🎙️ Live Microphone
+            </button>
+            <button class="tab-btn" id="tab-file-btn" onclick="switchTab('file')">
+                📁 Audio File Upload
+            </button>
+        </div>
+
+        <!-- Mic Tab -->
+        <div id="tab-mic" class="mic-box">
+            <button class="record-trigger" id="record-btn" onclick="toggleRecording()" title="Click to start/stop speech dictation">
+                <svg id="mic-icon" viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+            </button>
+            <div class="status-indicator">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="status-text">Click the microphone to start live dictation</span>
+            </div>
+        </div>
+
+        <!-- File Tab -->
+        <div id="tab-file" class="upload-area" style="display: none;" onclick="document.getElementById('file-input').click()">
+            <input type="file" id="file-input" accept="audio/*" onchange="handleFileUpload(event)">
+            <svg style="width: 44px; height: 44px; fill: var(--text-muted); margin-bottom: 10px;" viewBox="0 0 24 24">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+            </svg>
+            <h3 style="font-size: 1.05rem; margin-bottom: 4px;">Choose Audio File or Drag & Drop</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Supports WAV, MP3, M4A, FLAC, OGG, WEBM</p>
+            <div id="audio-preview-container">
+                <audio id="audio-player" controls style="margin-top: 14px;"></audio>
+            </div>
+        </div>
+    </div>
+
+    <!-- Output Transcript Section -->
+    <div class="card">
+        <div class="transcript-header">
+            <h2>📝 Transcribed Speech</h2>
+            <div class="cleaner-actions">
+                <button class="btn-action primary" onclick="cleanFillers()" title="Remove filler words like um, uh, you know">
+                    ✨ Smart Text Cleaner
+                </button>
+                <button class="btn-action" onclick="speakTranscript()" title="Listen to transcript aloud">
+                    🔊 Listen (TTS)
+                </button>
+                <button class="btn-action" onclick="copyTranscript()" title="Copy to clipboard">
+                    📋 Copy
+                </button>
+                <button class="btn-action" onclick="downloadTranscript()" title="Download as .txt">
+                    📥 Download .txt
+                </button>
+            </div>
+        </div>
+
+        <textarea id="transcript" placeholder="Transcribed words will appear here in real-time as you speak, or when an audio file is uploaded..."></textarea>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-label">Word Count</div>
+                <div class="stat-value" id="stat-words">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Character Count</div>
+                <div class="stat-value" id="stat-chars">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Engine Mode</div>
+                <div class="stat-value" id="stat-engine">Live WebSpeech / Wav2Vec2</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Status</div>
+                <div class="stat-value" id="stat-latency" style="color: var(--success);">Ready</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Built with ❤️ for Task 2 ASR Tool Implementation | <a href="https://github.com/JaniceShirley/asr-tool-wav2vec2" target="_blank">GitHub Repository</a></p>
+    </footer>
+</div>
+
+<script>
+    let recognition = null;
+    let isRecording = false;
+    const transcriptEl = document.getElementById('transcript');
+    const statusText = document.getElementById('status-text');
+    const statusDot = document.getElementById('status-dot');
+    const recordBtn = document.getElementById('record-btn');
+    const statWords = document.getElementById('stat-words');
+    const statChars = document.getElementById('stat-chars');
+    const statLatency = document.getElementById('stat-latency');
+
+    // Initialize Web Speech API
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        let finalTranscript = '';
+
+        recognition.onstart = () => {
+            isRecording = true;
+            recordBtn.classList.add('recording');
+            statusDot.classList.add('active');
+            statusText.textContent = 'Listening... Speak clearly into your microphone.';
+            statLatency.textContent = 'Streaming';
+            statLatency.style.color = '#38bdf8';
+        };
+
+        recognition.onresult = (event) => {
+            let interim = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript + ' ';
+                } else {
+                    interim += event.results[i][0].transcript;
+                }
+            }
+            transcriptEl.value = (finalTranscript + interim).trim();
+            updateStats();
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            if (event.error === 'not-allowed') {
+                statusText.textContent = '⚠️ Microphone access denied. Please grant permission in browser.';
+            } else {
+                statusText.textContent = `Error: ${event.error}`;
+            }
+            stopRecording();
+        };
+
+        recognition.onend = () => {
+            if (isRecording) {
+                // Keep recording continuous
+                try { recognition.start(); } catch(e) {}
+            } else {
+                stopRecording();
+            }
+        };
+    } else {
+        statusText.textContent = '⚠️ Web Speech API not supported in this browser. Use Chrome/Edge or upload audio files.';
+    }
+
+    function toggleRecording() {
+        if (!recognition) {
+            alert('Your browser does not support live Web Speech. Please use Google Chrome, Edge, or upload an audio file.');
+            return;
+        }
+        if (isRecording) {
+            isRecording = false;
+            recognition.stop();
+            stopRecording();
+        } else {
+            transcriptEl.value = '';
+            try {
+                recognition.start();
+            } catch(e) {
+                console.error(e);
+            }
+        }
+    }
+
+    function stopRecording() {
+        isRecording = false;
+        recordBtn.classList.remove('recording');
+        statusDot.classList.remove('active');
+        statusText.textContent = 'Recording stopped. You can edit, clean, or export your transcript.';
+        statLatency.textContent = 'Ready';
+        statLatency.style.color = 'var(--success)';
+        updateStats();
+    }
+
+    function switchTab(tab) {
+        document.getElementById('tab-mic-btn').classList.toggle('active', tab === 'mic');
+        document.getElementById('tab-file-btn').classList.toggle('active', tab === 'file');
+        document.getElementById('tab-mic').style.display = tab === 'mic' ? 'flex' : 'none';
+        document.getElementById('tab-file').style.display = tab === 'file' ? 'block' : 'none';
+        if (isRecording && tab === 'file') {
+            toggleRecording();
+        }
+    }
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const player = document.getElementById('audio-player');
+        const previewContainer = document.getElementById('audio-preview-container');
+        player.src = URL.createObjectURL(file);
+        previewContainer.style.display = 'block';
+
+        statusText.textContent = `Loaded audio file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        statLatency.textContent = 'Loaded';
+
+        // Notify user about local Python backend / CLI for local offline Wav2Vec2 batch execution
+        if (!transcriptEl.value) {
+            transcriptEl.value = `[Audio File Loaded: ${file.name}]\nPlaying audio in browser.\nFor neural Wav2Vec 2.0 deep CTC inference, run:\npython3 cli.py --file "${file.name}"\nor use app.py on your machine.`;
+            updateStats();
+        }
+    }
+
+    /* Smart Text Cleaner: removes fillers and repetitive hesitations */
+    function cleanFillers() {
+        let text = transcriptEl.value;
+        if (!text.trim()) return;
+
+        const fillers = [
+            /\b(um|umm|uh|uhh|er|err|ah|ahh)\b/gi,
+            /\b(you know|like|sort of|kind of|i mean)\b/gi,
+            /\s{2,}/g,
+            /\b(\w+)\s+\1\b/gi // repeated stutter words (e.g. "the the" -> "the")
+        ];
+
+        let cleaned = text;
+        cleaned = cleaned.replace(/\b(um|umm|uh|uhh|er|err|ah|ahh)\b/gi, '');
+        cleaned = cleaned.replace(/\b(you know|sort of|kind of)\b/gi, '');
+        cleaned = cleaned.replace(/\b(\w+)\s+\1\b/gi, '$1'); // deduplicate stutter repeats
+        cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+
+        // Capitalize first letter of sentences
+        cleaned = cleaned.replace(/(^\s*|\.\s*)([a-z])/g, (match, sep, char) => sep + char.toUpperCase());
+
+        transcriptEl.value = cleaned;
+        updateStats();
+        alert('✨ Transcript cleaned: filler words and stutters removed!');
+    }
+
+    /* Text-to-Speech */
+    function speakTranscript() {
+        const text = transcriptEl.value.trim();
+        if (!text) {
+            alert('Please record or enter text first.');
+            return;
+        }
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    /* Copy to clipboard */
+    function copyTranscript() {
+        const text = transcriptEl.value.trim();
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('📋 Transcript copied to clipboard!');
+        });
+    }
+
+    /* Download as .txt */
+    function downloadTranscript() {
+        const text = transcriptEl.value.trim();
+        if (!text) {
+            alert('Transcript is empty.');
+            return;
+        }
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'transcription.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    /* Update word and character statistics */
+    function updateStats() {
+        const text = transcriptEl.value.trim();
+        const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+        const chars = text.length;
+        statWords.textContent = words;
+        statChars.textContent = chars;
+    }
+
+    transcriptEl.addEventListener('input', updateStats);
+</script>
+
+</body>
+</html>
