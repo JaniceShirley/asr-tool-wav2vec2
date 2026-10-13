@@ -1,0 +1,15 @@
+# Automatic Speech Recognition (ASR) Tool Dependencies
+# Core Deep Learning & NLP
+torch>=2.0.0
+torchaudio>=2.0.0
+transformers>=4.30.0
+
+# Audio Processing & Feature Extraction
+librosa>=0.10.0
+soundfile>=0.12.0
+sounddevice>=0.4.6
+scipy>=1.10.0
+numpy>=1.23.0
+
+# Web Application Interface
+gradio>=4.0.0
